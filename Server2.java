@@ -93,10 +93,9 @@ public class Server2 implements Hello {
     	return b;
     }
 	
+	public void closeLog() throws Exception {}
+	public void printCurrentStatus(int num) throws Exception {}
 
-	public int issueWrite(String a, int b, int siteNumber) throws Exception {
-		return -1;
-	}
     public static void main(String args[]) {
 	
 	try {

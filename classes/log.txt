@@ -1,0 +1,282 @@
+------------------------------
+Test Case #1
+Y = 2 X = 1 Z = 3 
+Transaction T3 starts at site 1, 23:05:33:180
+Transaction T1 starts at site 2, 23:05:33:195
+Transaction T2 starts at site 2, 23:05:33:208
+Transaction T1 get lock on X, 23:05:33:212
+Transaction T1 Read X = 1 at site 2, 23:05:33:224
+Transaction T2 get lock on Y, 23:05:33:226
+Transaction T2 Read Y = 2 at site 2, 23:05:33:229
+Transaction T3 get lock on Y, 23:05:33:230
+Transaction T3 Read Y = 2 at site 1, 23:05:33:230
+Transaction T2 fails to get lock on X, 23:05:33:233
+Start Commit Transaction T1, site 2, 23:05:33:235
+realease lock on from Transaction T1 on X, 23:05:33:235
+Transaction T2 get lock on X, 23:05:33:236
+Transaction T2 Write X to 5 at site 2, 23:05:33:238
+Start Commit Transaction T2, site 2, 23:05:33:242
+Write to all other sites
+Transaction T2 Write X to 5 at site 1, 23:05:33:242
+Transaction T2 Write X to 5 at site 3, 23:05:33:248
+realease lock on from Transaction T2 on X, 23:05:33:249
+Start Commit Transaction T3, site 1, 23:05:33:252
+realease lock on from Transaction T3 on Y, 23:05:33:252
+------------------------------
+Test Case #2
+Y = 2 X = 5 Z = 3 
+Transaction T1 starts at site 1, 23:05:33:254
+Transaction T2 starts at site 2, 23:05:33:256
+Transaction T1 get lock on X, 23:05:33:261
+Transaction T1 Read X = 5 at site 1, 23:05:33:261
+Transaction T2 get lock on Y, 23:05:33:265
+Transaction T2 Read Y = 2 at site 2, 23:05:33:268
+Transaction T2 fails to get lock on X, 23:05:33:271
+Transaction T1 fails to get lock on Y, 23:05:33:272
+Cycle detected, 23:05:33:272
+Cycle[1, 2]
+Abort Transaction T1, 23:05:33:272
+realease lock on from Transaction T1 on X, 23:05:33:273
+Transaction T2 get lock on X, 23:05:33:274
+Transaction T2 Write X to 2 at site 2, 23:05:33:278
+Start Commit Transaction T2, site 2, 23:05:33:282
+realease lock on from Transaction T2 on Y, 23:05:33:282
+Write to all other sites
+Transaction T2 Write X to 2 at site 1, 23:05:33:283
+Transaction T2 Write X to 2 at site 3, 23:05:33:285
+realease lock on from Transaction T2 on X, 23:05:33:285
+Try to restart Transaction1 at site 1
+Transaction T1 get lock on X, 23:05:33:286
+Transaction T1 Read X = 2 at site 1, 23:05:33:286
+Transaction T1 get lock on Y, 23:05:33:286
+Transaction T1 Write Y to 1 at site 1, 23:05:33:287
+Start Commit Transaction T1, site 1, 23:05:33:287
+realease lock on from Transaction T1 on X, 23:05:33:287
+Write to all other sites
+Transaction T1 Write Y to 1 at site 2, 23:05:33:291
+Transaction T1 Write Y to 1 at site 3, 23:05:33:299
+realease lock on from Transaction T1 on Y, 23:05:33:300
+------------------------------
+Test Case #3
+Y = 1 X = 2 Z = 3 
+Transaction T1 starts at site 1, 23:05:33:304
+Transaction T2 starts at site 2, 23:05:33:306
+Transaction T1 get lock on X, 23:05:33:320
+Transaction T1 Write X to 0 at site 1, 23:05:33:321
+Transaction T2 get lock on Y, 23:05:33:331
+Transaction T2 Write Y to 0 at site 2, 23:05:33:341
+Transaction T2 fails to get lock on X, 23:05:33:345
+Transaction T1 fails to get lock on Y, 23:05:33:345
+Cycle detected, 23:05:33:346
+Cycle[1, 2]
+Abort Transaction T1, 23:05:33:346
+rollBack X to 2 at site 1, 23:05:33:346
+realease lock on from Transaction T1 on X, 23:05:33:346
+Transaction T2 get lock on X, 23:05:33:347
+Transaction T2 Write X to 2 at site 2, 23:05:33:350
+Start Commit Transaction T2, site 2, 23:05:33:354
+Write to all other sites
+Transaction T2 Write Y to 0 at site 1, 23:05:33:355
+Transaction T2 Write Y to 0 at site 3, 23:05:33:357
+realease lock on from Transaction T2 on Y, 23:05:33:357
+Write to all other sites
+Transaction T2 Write X to 2 at site 1, 23:05:33:358
+Transaction T2 Write X to 2 at site 3, 23:05:33:361
+realease lock on from Transaction T2 on X, 23:05:33:362
+Try to restart Transaction1 at site 1
+Transaction T1 get lock on X, 23:05:33:363
+Transaction T1 Write X to 0 at site 1, 23:05:33:364
+Transaction T1 get lock on Y, 23:05:33:364
+Transaction T1 Write Y to 1 at site 1, 23:05:33:365
+Start Commit Transaction T1, site 1, 23:05:33:365
+Write to all other sites
+Transaction T1 Write X to 0 at site 2, 23:05:33:370
+Transaction T1 Write X to 0 at site 3, 23:05:33:372
+realease lock on from Transaction T1 on X, 23:05:33:373
+Write to all other sites
+Transaction T1 Write Y to 1 at site 2, 23:05:33:376
+Transaction T1 Write Y to 1 at site 3, 23:05:33:381
+realease lock on from Transaction T1 on Y, 23:05:33:381
+------------------------------
+Test Case #4
+Y = 1 X = 0 Z = 3 
+Transaction T1 starts at site 2, 23:05:33:412
+Transaction T2 starts at site 2, 23:05:33:434
+Transaction T1 get lock on X, 23:05:33:439
+Transaction T1 Read X = 0 at site 2, 23:05:33:442
+Transaction T2 get lock on Y, 23:05:33:446
+Transaction T2 Read Y = 1 at site 2, 23:05:33:448
+Transaction T2 fails to get lock on X, 23:05:33:452
+Transaction T1 fails to get lock on Y, 23:05:33:454
+Cycle detected, 23:05:33:454
+Cycle[1, 2]
+Abort Transaction T1, 23:05:33:455
+realease lock on from Transaction T1 on X, 23:05:33:456
+Transaction T2 get lock on X, 23:05:33:457
+Transaction T2 Write X to 2 at site 2, 23:05:33:461
+Start Commit Transaction T2, site 2, 23:05:33:469
+realease lock on from Transaction T2 on Y, 23:05:33:469
+Write to all other sites
+Transaction T2 Write X to 2 at site 1, 23:05:33:469
+Transaction T2 Write X to 2 at site 3, 23:05:33:472
+realease lock on from Transaction T2 on X, 23:05:33:472
+Try to restart Transaction1 at site 2
+Transaction T1 get lock on X, 23:05:33:479
+Transaction T1 Read X = 2 at site 2, 23:05:33:483
+Transaction T1 get lock on Y, 23:05:33:486
+Transaction T1 Write Y to 1 at site 2, 23:05:33:490
+Start Commit Transaction T1, site 2, 23:05:33:497
+realease lock on from Transaction T1 on X, 23:05:33:497
+Write to all other sites
+Transaction T1 Write Y to 1 at site 1, 23:05:33:498
+Transaction T1 Write Y to 1 at site 3, 23:05:33:506
+realease lock on from Transaction T1 on Y, 23:05:33:506
+------------------------------
+Test Case #5
+Y = 1 X = 2 Z = 3 
+Transaction T3 starts at site 3, 23:05:33:542
+Transaction T1 starts at site 1, 23:05:33:546
+Transaction T2 starts at site 2, 23:05:33:549
+Transaction T2 get lock on Y, 23:05:33:554
+Transaction T2 Read Y = 1 at site 2, 23:05:33:558
+Transaction T3 get lock on X, 23:05:33:562
+Transaction T3 Write X to 5 at site 3, 23:05:33:564
+Transaction T1 fails to get lock on X, 23:05:33:565
+Transaction T2 fails to get lock on X, 23:05:33:567
+Start Commit Transaction T3, site 3, 23:05:33:569
+Write to all other sites
+Transaction T3 Write X to 5 at site 1, 23:05:33:569
+Transaction T3 Write X to 5 at site 2, 23:05:33:572
+realease lock on from Transaction T3 on X, 23:05:33:572
+Transaction T1 get lock on X, 23:05:33:572
+Transaction T1 Read X = 5 at site 1, 23:05:33:573
+Transaction T1 fails to get lock on Y, 23:05:33:576
+Cycle detected, 23:05:33:576
+Cycle[1, 2]
+Abort Transaction T1, 23:05:33:576
+realease lock on from Transaction T1 on X, 23:05:33:577
+Transaction T2 get lock on X, 23:05:33:577
+Transaction T2 Write X to 0 at site 2, 23:05:33:579
+Start Commit Transaction T2, site 2, 23:05:33:583
+realease lock on from Transaction T2 on Y, 23:05:33:583
+Write to all other sites
+Transaction T2 Write X to 0 at site 1, 23:05:33:583
+Transaction T2 Write X to 0 at site 3, 23:05:33:585
+realease lock on from Transaction T2 on X, 23:05:33:586
+Try to restart Transaction1 at site 1
+Transaction T1 get lock on X, 23:05:33:586
+Transaction T1 Read X = 0 at site 1, 23:05:33:586
+Transaction T1 get lock on Y, 23:05:33:587
+Transaction T1 Write Y to 0 at site 1, 23:05:33:587
+Start Commit Transaction T1, site 1, 23:05:33:587
+realease lock on from Transaction T1 on X, 23:05:33:588
+Write to all other sites
+Transaction T1 Write Y to 0 at site 2, 23:05:33:590
+Transaction T1 Write Y to 0 at site 3, 23:05:33:593
+realease lock on from Transaction T1 on Y, 23:05:33:593
+------------------------------
+Test Case #6
+Y = 0 X = 0 Z = 3 
+Transaction T3 starts at site 3, 23:05:33:600
+Transaction T1 starts at site 1, 23:05:33:605
+Transaction T2 starts at site 2, 23:05:33:607
+Transaction T1 get lock on X, 23:05:33:613
+Transaction T1 Write X to 6 at site 1, 23:05:33:613
+Transaction T2 get lock on Y, 23:05:33:617
+Transaction T2 Write Y to 5 at site 2, 23:05:33:620
+Transaction T3 get lock on Z, 23:05:33:623
+Transaction T3 Write Z to 4 at site 3, 23:05:33:625
+Transaction T1 fails to get lock on Y, 23:05:33:627
+Transaction T2 fails to get lock on Z, 23:05:33:631
+Transaction T3 fails to get lock on X, 23:05:33:634
+Cycle detected, 23:05:33:635
+Cycle[1, 2, 3]
+Abort Transaction T3, 23:05:33:635
+rollBack Z to 3 at site 3, 23:05:33:638
+realease lock on from Transaction T3 on Z, 23:05:33:639
+Transaction T2 get lock on Z, 23:05:33:639
+Transaction T2 Read Z = 3 at site 2, 23:05:33:642
+Start Commit Transaction T2, site 2, 23:05:33:652
+Write to all other sites
+Transaction T2 Write Y to 5 at site 1, 23:05:33:652
+Transaction T2 Write Y to 5 at site 3, 23:05:33:655
+realease lock on from Transaction T2 on Y, 23:05:33:656
+Transaction T1 get lock on Y, 23:05:33:656
+Transaction T1 Read Y = 5 at site 1, 23:05:33:657
+Start Commit Transaction T1, site 1, 23:05:33:657
+Write to all other sites
+Transaction T1 Write X to 6 at site 2, 23:05:33:660
+Transaction T1 Write X to 6 at site 3, 23:05:33:664
+realease lock on from Transaction T1 on X, 23:05:33:665
+realease lock on from Transaction T1 on Y, 23:05:33:665
+realease lock on from Transaction T2 on Z, 23:05:33:666
+Try to restart Transaction3 at site 3
+Transaction T3 get lock on Z, 23:05:33:671
+Transaction T3 Write Z to 4 at site 3, 23:05:33:675
+Transaction T3 get lock on X, 23:05:33:680
+Transaction T3 Read X = 6 at site 3, 23:05:33:684
+Start Commit Transaction T3, site 3, 23:05:33:690
+Write to all other sites
+Transaction T3 Write Z to 4 at site 1, 23:05:33:690
+Transaction T3 Write Z to 4 at site 2, 23:05:33:693
+realease lock on from Transaction T3 on Z, 23:05:33:693
+realease lock on from Transaction T3 on X, 23:05:33:694
+------------------------------
+Test Case #7
+Y = 5 X = 6 Z = 4 
+Transaction T3 starts at site 1, 23:05:33:698
+Transaction T1 starts at site 2, 23:05:33:701
+Transaction T2 starts at site 3, 23:05:33:705
+Transaction T1 get lock on X, 23:05:33:711
+Transaction T1 Read X = 6 at site 2, 23:05:33:718
+Transaction T3 get lock on X, 23:05:33:722
+Transaction T3 Read X = 6 at site 1, 23:05:33:723
+Transaction T3 fails to get lock on X, 23:05:33:724
+Start Commit Transaction T1, site 2, 23:05:33:729
+Transaction T3 get lock on X, 23:05:33:729
+Transaction T3 Write X to 7 at site 1, 23:05:33:729
+Transaction T2 fails to get lock on X, 23:05:33:736
+Start Commit Transaction T3, site 1, 23:05:33:737
+Write to all other sites
+Transaction T3 Write X to 7 at site 2, 23:05:33:739
+Transaction T3 Write X to 7 at site 3, 23:05:33:742
+realease lock on from Transaction T3 on X, 23:05:33:743
+Transaction T2 get lock on X, 23:05:33:743
+Transaction T2 Write X to 5 at site 3, 23:05:33:745
+Start Commit Transaction T2, site 3, 23:05:33:749
+Write to all other sites
+Transaction T2 Write X to 5 at site 1, 23:05:33:749
+Transaction T2 Write X to 5 at site 2, 23:05:33:752
+realease lock on from Transaction T2 on X, 23:05:33:752
+------------------------------
+Test Case #8
+Y = 5 X = 5 Z = 4 
+Transaction T1 starts at site 1, 23:05:33:756
+Transaction T2 starts at site 2, 23:05:33:758
+Transaction T3 starts at site 3, 23:05:33:762
+Transaction T2 get lock on Y, 23:05:33:767
+Transaction T2 Write Y to 6 at site 2, 23:05:33:773
+Transaction T3 get lock on X, 23:05:33:782
+Transaction T3 Write X to 8 at site 3, 23:05:33:785
+Transaction T1 fails to get lock on X, 23:05:33:787
+Transaction T2 fails to get lock on X, 23:05:33:790
+Start Commit Transaction T3, site 3, 23:05:33:794
+Write to all other sites
+Transaction T3 Write X to 8 at site 1, 23:05:33:796
+Transaction T3 Write X to 8 at site 2, 23:05:33:806
+realease lock on from Transaction T3 on X, 23:05:33:807
+Transaction T1 get lock on X, 23:05:33:807
+Transaction T1 Read X = 8 at site 1, 23:05:33:807
+Transaction T1 fails to get lock on Y, 23:05:33:808
+Transaction T2 get lock on X, 23:05:33:808
+Transaction T2 Read X = 8 at site 2, 23:05:33:811
+Start Commit Transaction T2, site 2, 23:05:33:819
+Write to all other sites
+Transaction T2 Write Y to 6 at site 1, 23:05:33:819
+Transaction T2 Write Y to 6 at site 3, 23:05:33:821
+realease lock on from Transaction T2 on Y, 23:05:33:821
+Transaction T1 get lock on Y, 23:05:33:822
+Transaction T1 Read Y = 6 at site 1, 23:05:33:822
+Start Commit Transaction T1, site 1, 23:05:33:825
+realease lock on from Transaction T1 on X, 23:05:33:825
+realease lock on from Transaction T1 on Y, 23:05:33:825

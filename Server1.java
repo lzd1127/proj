@@ -6,7 +6,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
-
+import java.io.PrintWriter;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 	
 public class Server1 implements Hello {
@@ -28,8 +31,10 @@ public class Server1 implements Hello {
 	Map<Integer, Integer> abortingDependency;
 	Map<Integer, AbortingStatus> aborting;
 
+	PrintWriter printWriter;
+	Object mutex;
 
-    public Server1() throws Exception{ 
+    public Server1() throws Exception { 
     	map = new HashMap<String, Integer>();
     	map.put("X", 1);
     	map.put("Y", 2);
@@ -59,9 +64,14 @@ public class Server1 implements Hello {
     	abortingDependency = new HashMap<Integer, Integer>();
     	aborting = new HashMap<Integer, AbortingStatus>();
 
+    	printWriter = new PrintWriter(new File("log.txt"));
+    	mutex = new Object();
+
     }
 
-
+    public void closeLog() throws Exception {
+    	printWriter.close();
+    }
     
     public void addRequest(String item, int siteNumber, String op, int val, int id) throws Exception{
 
@@ -111,6 +121,8 @@ public class Server1 implements Hello {
     		log.put(id, list);
     		waitGraph.put(id, new HashSet<Integer>());
 
+    		printWriter.println("Transaction T" + id + " starts at site " + siteNumber + ", " + getCurrentTime());
+
     		if (siteNumber != 1) {
     				Registry registry = LocateRegistry.getRegistry(sites[siteNumber - 1]);
     				Hello stub = (Hello) registry.lookup("Server" + siteNumber);
@@ -133,11 +145,15 @@ public class Server1 implements Hello {
     			if (siteNumber != 1) {
     				Registry registry = LocateRegistry.getRegistry(sites[siteNumber - 1]);
     				Hello stub = (Hello) registry.lookup("Server" + siteNumber);
-    				stub.readObject(r.item);
-
+    				int response = stub.readObject(r.item);
+    				printWriter.printf("Transaction T%d Read %s = %d at site %d, %s\n", 
+    						r.id, r.item, response, r.siteNumber, getCurrentTime());
+    		
     				stub.addNextOperation(id);
     			} else {
-    				readObject(r.item);
+    				int response = readObject(r.item);
+    				printWriter.printf("Transaction T%d Read %s = %d at site %d, %s\n", 
+    						r.id, r.item, response, r.siteNumber, getCurrentTime());
     				addNextOperation(id);
     			}
     			
@@ -146,6 +162,8 @@ public class Server1 implements Hello {
     	} else if (op.equals("F")) {
 
     		System.out.println("Commit Transaction " + id);
+    		printWriter.println("Start Commit Transaction T" + id + ", site " + siteNumber + ", "+ getCurrentTime());
+
     		waitGraph.remove(id);
     		Set<Integer> set = waitGraph.keySet();
     		for (Integer n : set) {
@@ -170,6 +188,7 @@ public class Server1 implements Hello {
     			if (status.count == 0) {
     				aborting.remove(abortId);
     				System.out.println("Try to restart Transaction " + status.id);
+    				printWriter.println("Try to restart Transaction" + status.id + " at site " + status.siteNumber);
     				if (status.siteNumber != 1) {
     					Registry registry = LocateRegistry.getRegistry(sites[status.siteNumber - 1]);
     					Hello stub = (Hello) registry.lookup("Server" + status.siteNumber);
@@ -203,10 +222,16 @@ public class Server1 implements Hello {
     			if (siteNumber != 1) {
     				Registry registry = LocateRegistry.getRegistry(sites[siteNumber - 1]);
     				Hello stub = (Hello) registry.lookup("Server" + siteNumber);
-    				stub.writeObject(r.item, val);
+    				int response = stub.writeObject(r.item, val);
+
+    				printWriter.printf("Transaction T%d Write %s to %d at site %d, %s\n", 
+    						r.id, r.item, response, r.siteNumber, getCurrentTime());
     				stub.addNextOperation(id);
     			} else {
-    				writeObject(r.item, val);
+    				int response = writeObject(r.item, val);
+    				printWriter.printf("Transaction T%d Write %s to %d at site %d, %s\n", 
+    						r.id, r.item, response, r.siteNumber, getCurrentTime());
+
     				addNextOperation(id);
     			}
     		}
@@ -215,11 +240,15 @@ public class Server1 implements Hello {
 
     private void writeAll(Request r) throws Exception{
     	lastStableValue.put(r.item, r.val);
+    	printWriter.println("Write to all other sites");
     	if (r.siteNumber == 1) {
     		for (int i = 2; i <= sites.length; i++) {
     			Registry registry = LocateRegistry.getRegistry(sites[i - 1]);
     			Hello stub = (Hello) registry.lookup("Server" + i);
     			stub.writeObject(r.item, r.val);
+    			printWriter.printf("Transaction T%d Write %s to %d at site %d, %s\n", 
+    						r.id, r.item, r.val, i, getCurrentTime());
+
     		}
     	} else {
     		for (int i = 1; i <= sites.length; i++) {
@@ -230,6 +259,9 @@ public class Server1 implements Hello {
     				Hello stub = (Hello) registry.lookup("Server" + i);
     				stub.writeObject(r.item, r.val);
     			}
+    			if (i != r.siteNumber)
+    			printWriter.printf("Transaction T%d Write %s to %d at site %d, %s\n", 
+    						r.id, r.item, r.val, i, getCurrentTime());
     		}
     	}
     }
@@ -237,6 +269,8 @@ public class Server1 implements Hello {
     private void unlock(Request r) throws Exception{
     	if (r.op.equals("S") || r.op.equals("F")) return;
     	LockStatus lock =  lockTable.get(r.item);
+    	List<String> releaseItems = new ArrayList<String>();
+    	List<Request> removeList = new ArrayList<Request>();
 
     	if (r.op.equals("W")) {
     		writeAll(r);
@@ -246,49 +280,98 @@ public class Server1 implements Hello {
     	if (lock.ids.size() == 0) {
     		lock.locked = false;
     		System.out.println("realease lock on " + r.item);
-
-    		/*
-    		System.out.println();
-    		for (Request haha : blockList) {
-    			System.out.print(" " + haha.op + " " + haha.item);
-    		}
-    		System.out.println();
-    		System.out.println(r.item.equals("Y"));
-			*/
-
+    		printWriter.printf("realease lock on from Transaction T%d on %s, %s\n", r.id, r.item, getCurrentTime());
+    		releaseItems.add(r.item);
     		for (Request b : blockList) {
     			if (r.item.equals(b.item)) {
+    				removeList.add(b);
+    				if (b.op.equals("R")) {
+    					for (Request o : blockList) {
+    						if (b != o && o.op.equals("R") && o.item.equals(b.item)) {
+    							removeList.add(o);
+    						}
+    					}
+    				}
+    				break;
+    			}
+    		}
+
+
+    	} else if (r.op.equals("R") && lock.readLock) {
+   			for (Request b : blockList) {
+   				if (r.item.equals(b.item) && b.op.equals("W") && b.id == lock.ids.get(0).id) {
+   					removeList.add(b);
+   				}
+   			}
+    	}
+
+    	for (Request b : removeList) {
+    		blockList.remove(b);
+    		addOperation(b.item, b.siteNumber, b.op, b.val, b.id);
+    	}
+
+    	/*
+    	for (String item : releaseItems) {
+    		for (Request b : blockList) {
+    			if (item.equals(b.item)) {
     				//String item, int siteNumber, String op, int val, int id) {
     				blockList.remove(b);
     				addOperation(b.item, b.siteNumber, b.op, b.val, b.id);
     				//tmp = b;
-    				break;
+    				if (b.op.equals("R") &&)
     			}
     		}
-    		//blockList.remove(tmp);
     	}
+		*/
     }
 
     private void abortingUnlock(Request r) throws Exception {
     	if (r.op.equals("S") || r.op.equals("F")) return;
+    	List<Request> removeList = new ArrayList<Request>();
+
     	LockStatus lock = lockTable.get(r.item);
     	lock.ids.remove(r);
     	Request tmp = null;
     	if (lock.ids.size() == 0) {
     		lock.locked = false;
     		System.out.println("realease lock on " + r.item);
+    		printWriter.printf("realease lock on from Transaction T%d on %s, %s\n", r.id, r.item, getCurrentTime());
     		for (Request b : blockList) {
     			if (r.item.equals(b.item)) {
     				//String item, int siteNumber, String op, int val, int id) {
-    				addOperation(b.item, b.siteNumber, b.op, b.val, b.id);
-    				tmp = b;
+    				removeList.add(b);
+    				if (b.op.equals("R")) {
+    					for (Request o : blockList) {
+    						if (b != o && o.op.equals("R") && o.item.equals(b.item)) {
+    							removeList.add(o);
+    						}
+    					}
+    				}
     				break;
     			}
     		}
-    		if (tmp != null) blockList.remove(tmp);
+    		//if (tmp != null) blockList.remove(tmp);
+    	} else if (r.op.equals("R") && lock.readLock) {
+   			for (Request b : blockList) {
+   				if (r.item.equals(b.item) && b.op.equals("W") && b.id == lock.ids.get(0).id) {
+   					removeList.add(b);
+   				}
+   			}
     	}
+    	for (Request b : removeList) {
+    		blockList.remove(b);
+    		addOperation(b.item, b.siteNumber, b.op, b.val, b.id);
+    	}
+
     }
 
+
+    private boolean allCompatible(Request r) {
+    	for (Request tmp : lockTable.get(r.item).ids) {
+    		if (tmp.id != r.id) return false;
+    	}
+    	return true;
+    }
     // 1 means can get lock    0 means cannot get lock, -1 means deadlock
     private int canGrantLock(Request r) throws Exception{
     	List<Track> tracks = lastTryLock.get(r.item);
@@ -303,21 +386,28 @@ public class Server1 implements Hello {
     		}
     		lockTable.get(r.item).locked = true;
     		System.out.println("get lock on " + r.item);
+    		printWriter.printf("Transaction T%d get lock on %s, %s\n", r.id, r.item, getCurrentTime());
     		return 1;
     	} 
     	if (lockTable.get(r.item).readLock && r.op.equals("R")) {
     		lockTable.get(r.item).ids.add(r);
     		System.out.println("get lock on " + r.item);
+    		printWriter.printf("Transaction T%d get lock on %s, %s\n", r.id, r.item, getCurrentTime());
     		return 1;
     	}
 
-    	if (lockTable.get(r.item).locked && lockTable.get(r.item).ids.get(0).id == r.id) {
+    	if (lockTable.get(r.item).locked && allCompatible(r)) {
 			lockTable.get(r.item).ids.add(r);
+			if (lockTable.get(r.item).readLock && r.op.equals("W")) {
+				lockTable.get(r.item).readLock = false;
+			}
 			System.out.println("get lock on " + r.item);
+			printWriter.printf("Transaction T%d get lock on %s, %s\n", r.id, r.item, getCurrentTime());
 			return 1;
 		}
 
 		//construct edge
+		printWriter.println("Transaction T" + r.id + " fails to get lock on " + r.item + ", " + getCurrentTime());
 		Track tmp = null;
 		if (r.op.equals("R")) {
 			for (int i = tracks.size() - 1; i >= 0; i--) {
@@ -339,14 +429,17 @@ public class Server1 implements Hello {
 
 		if (detectCycle(tmp.id, r.id)) {
 			System.out.println("Cycle detected");
-			System.out.println("Abort Transaction " + r.id);
+			printWriter.println("Cycle detected" + ", " + getCurrentTime());
 			Set<Integer> records = new HashSet<Integer>();
 			records.add(tmp.id);
 
 			recordCycle(tmp.id, r.id, records);
 			System.out.println("Cycle " + records);
+			printWriter.println("Cycle" + records);
 			records.remove(r.id);
-			
+			System.out.println("Abort Transaction " + r.id);
+			printWriter.println("Abort Transaction T" + r.id + ", " + getCurrentTime());
+
 			for (Integer one : records) {
 				abortingDependency.put(one, r.id);
 			}
@@ -369,7 +462,7 @@ public class Server1 implements Hello {
     		if (i == dest) {
     			return true;
     		}
-    		if (detectCycle(i, dest)) return true;
+    		if (recordCycle(i, dest, set)) return true;
     		set.remove(i);
     	}
     	return false;
@@ -390,10 +483,14 @@ public class Server1 implements Hello {
 	    	Hello stub = (Hello) registry.lookup("Server" + r.siteNumber);
 	    	for (String s : touchSet) {
 	    		stub.undo(s, lastStableValue.get(s));
+	    		printWriter.printf("rollBack %s to %d at site %d, %s\n", s, 
+	    			lastStableValue.get(s), r.siteNumber, getCurrentTime());
 	    	}
 	    } else {
 	    	for (String s : touchSet) {
 	    		undo(s, lastStableValue.get(s));
+	    		printWriter.printf("rollBack %s to %d at site %d, %s\n", s, 
+	    			lastStableValue.get(s), r.siteNumber, getCurrentTime());
 	    	}
 	    }
 
@@ -457,6 +554,11 @@ public class Server1 implements Hello {
     	return false;
     }
 
+    private String getCurrentTime() {
+    	String timeStamp = new SimpleDateFormat("HH:mm:ss:SS").format(new Date());
+    	return timeStamp;
+    }
+
 
     public void undo(String a, int b) throws RemoteException {
     	map.put(a, b);
@@ -476,18 +578,14 @@ public class Server1 implements Hello {
     	return b;
     }
 	
-    public int issueWrite(String a, int b, int siteNumber) throws Exception {
-	    Registry registry = LocateRegistry.getRegistry(sites[siteNumber - 1]);
-    	Hello stub = (Hello) registry.lookup("Server" + siteNumber);
-	   	int response = stub.writeObject(a, b);
-	    System.out.println("Write " + a + "to " + response + " at " + siteNumber);
-	    return response;
+    public void printCurrentStatus(int num) throws Exception {
+    	printWriter.println("------------------------------");
+    	printWriter.println("Test Case #" + num);
+    	for (String s : map.keySet()) {
+    		printWriter.print(s + " = " + map.get(s) + " ");
+    	}
+    	printWriter.println();
     }
-
-
-
-
-
 
     public static void main(String args[]) {
 	

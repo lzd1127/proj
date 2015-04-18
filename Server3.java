@@ -69,7 +69,6 @@ public class Server3 implements Hello {
     	
     }
 
-
     public void addFirst(String item, int siteNumber, String op, int val, int id) throws Exception {
         Deque<Request> queue = transactions.get(id);
         Request r = new Request(item, siteNumber, op, val, id);
@@ -95,9 +94,10 @@ public class Server3 implements Hello {
     }
 	
 
-	public int issueWrite(String a, int b, int siteNumber) throws Exception {
-		return -1;
-	}
+    public void closeLog() throws Exception {}
+    public void printCurrentStatus(int num) throws Exception {}
+    
+
     public static void main(String args[]) {
 	
 	try {
