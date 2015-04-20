@@ -22,7 +22,7 @@ Open Another terminal and cd into the current path:
 
 cd classes
 
-java proj.Server3
+java proj.Server2
 
 
 Open Another terminal and cd into the current path: 
